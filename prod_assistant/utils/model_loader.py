@@ -10,6 +10,8 @@ from prod_assistant.logger import GLOBAL_LOGGER as log
 from prod_assistant.exception.custom_exception import ProductAssistantException
 import asyncio
 
+load_dotenv()
+
 
 class ApiKeyManager:
     def __init__(self):
@@ -21,6 +23,9 @@ class ApiKeyManager:
             "ASTRA_DB_APPLICATION_TOKEN": os.getenv("ASTRA_DB_APPLICATION_TOKEN"),
             "ASTRA_DB_KEYSPACE": os.getenv("ASTRA_DB_KEYSPACE"),
         }
+        print(repr(os.getenv("ASTRA_DB_API_ENDPOINT")))
+        print(repr(os.getenv("ASTRA_DB_APPLICATION_TOKEN")))
+        print(repr(os.getenv("ASTRA_DB_KEYSPACE")))
 
         # Just log loaded keys (don't print actual values)
         for key, val in self.api_keys.items():

@@ -1,7 +1,9 @@
 import os
 import pandas as pd
+import cassio
 from dotenv import load_dotenv
 from typing import List
+from langchain_community.vectorstores import Cassandra
 from langchain_core.documents import Document
 from langchain_astradb import AstraDBVectorStore
 from prod_assistant.utils.model_loader import ModelLoader
@@ -29,16 +31,17 @@ class DataIngestion:
         """
         load_dotenv()
         
-        required_vars = ["GOOGLE_API_KEY", "ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_KEYSPACE"]
+        required_vars = ["GOOGLE_API_KEY", "ASTRA_DB_API_ENDPOINT", "ASTRA_DB_APPLICATION_TOKEN", "ASTRA_DB_KEYSPACE","ASTRA_DB_ID"]
         
         missing_vars = [var for var in required_vars if os.getenv(var) is None]
         if missing_vars:
             raise EnvironmentError(f"Missing environment variables: {missing_vars}")
         
-        self.google_api_key = os.getenv("GOOGLE_API_KEY")
-        self.db_api_endpoint = os.getenv("ASTRA_DB_API_ENDPOINT")
-        self.db_application_token = os.getenv("ASTRA_DB_APPLICATION_TOKEN")
-        self.db_keyspace = os.getenv("ASTRA_DB_KEYSPACE")
+        self.google_api_key=os.getenv("GOOGLE_API_KEY")
+        self.db_api_endpoint=os.getenv("ASTRA_DB_API_ENDPOINT")
+        self.db_application_token=os.getenv("ASTRA_DB_APPLICATION_TOKEN")
+        self.db_keyspace=os.getenv("ASTRA_DB_KEYSPACE")
+        self.astra_db_id=os.getenv("ASTRA_DB_ID")
 
        
 
@@ -103,17 +106,25 @@ class DataIngestion:
         Store documents into AstraDB vector store.
         """
         collection_name=self.config["astra_db"]["collection_name"]
-        vstore = AstraDBVectorStore(
-            embedding= self.model_loader.load_embeddings(),
-            collection_name=collection_name,
-            api_endpoint=self.db_api_endpoint,
-            token=self.db_application_token,
-            namespace=self.db_keyspace,
+        # vstore = AstraDBVectorStore(
+        #     embedding= self.model_loader.load_embeddings(),
+        #     collection_name=collection_name,
+        #     api_endpoint=self.db_api_endpoint,
+        #     token=self.db_application_token,
+        #     namespace=self.db_keyspace,
+        # )
+        
+        cassio.init(token = self.db_application_token,database_id=self.astra_db_id)
+        astra_vector_store = Cassandra(
+            embedding=self.model_loader.load_embeddings(),
+            table_name = collection_name,
+            session = None,
+            keyspace = self.db_keyspace,
         )
 
-        inserted_ids = vstore.add_documents(documents)
+        inserted_ids = astra_vector_store.add_documents(documents)
         print(f"Successfully inserted {len(inserted_ids)} documents into AstraDB.")
-        return vstore, inserted_ids
+        return astra_vector_store, inserted_ids 
 
     def run_pipeline(self):
         """
