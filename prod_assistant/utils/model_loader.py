@@ -2,12 +2,12 @@ import os
 import sys
 import json
 from dotenv import load_dotenv
-from prod_assistant.utils.config_loader import load_config
+from utils.config_loader import load_config
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
-from prod_assistant.logger import GLOBAL_LOGGER as log
-from prod_assistant.exception.custom_exception import ProductAssistantException
+from logger import GLOBAL_LOGGER as log
+from exception.custom_exception import ProductAssistantException
 import asyncio
 
 load_dotenv()
@@ -77,7 +77,7 @@ class ModelLoader:
         Load and return the configured LLM model.
         """
         llm_block = self.config["llm"]
-        provider_key = os.getenv("LLM_PROVIDER", "openai")
+        provider_key = os.getenv("LLM_PROVIDER", "groq")
 
         if provider_key not in llm_block:
             log.error("LLM provider not found in config", provider=provider_key)

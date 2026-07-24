@@ -106,21 +106,21 @@ class DataIngestion:
         Store documents into AstraDB vector store.
         """
         collection_name=self.config["astra_db"]["collection_name"]
-        # vstore = AstraDBVectorStore(
-        #     embedding= self.model_loader.load_embeddings(),
-        #     collection_name=collection_name,
-        #     api_endpoint=self.db_api_endpoint,
-        #     token=self.db_application_token,
-        #     namespace=self.db_keyspace,
-        # )
-        
-        cassio.init(token = self.db_application_token,database_id=self.astra_db_id)
-        astra_vector_store = Cassandra(
-            embedding=self.model_loader.load_embeddings(),
-            table_name = collection_name,
-            session = None,
-            keyspace = self.db_keyspace,
+        astra_vector_store = AstraDBVectorStore(
+            embedding= self.model_loader.load_embeddings(),
+            collection_name=collection_name,
+            api_endpoint=self.db_api_endpoint,
+            token=self.db_application_token,
+            namespace=self.db_keyspace,
         )
+        
+        # cassio.init(token = self.db_application_token,database_id=self.astra_db_id)
+        # astra_vector_store = Cassandra(
+        #     embedding=self.model_loader.load_embeddings(),
+        #     table_name = collection_name,
+        #     session = None,
+        #     keyspace = self.db_keyspace,
+        # )
 
         inserted_ids = astra_vector_store.add_documents(documents)
         print(f"Successfully inserted {len(inserted_ids)} documents into AstraDB.")
