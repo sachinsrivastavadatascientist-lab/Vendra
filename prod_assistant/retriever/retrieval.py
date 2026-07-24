@@ -7,6 +7,9 @@ from langchain_community.vectorstores import Cassandra
 from dotenv import load_dotenv
 from utils.model_loader import ModelLoader
 
+from langchain.retrievers.document_compressors import LLMChainFilter
+from langchain.retrievers import ContextualCompressionRetriever
+
 
 class Retriever:
     def __init__(self):
@@ -51,7 +54,19 @@ class Retriever:
 
         if not self.retriever:
             top_k=self.config["retriever"]["top_k"] if 'retriever' in self.config else 4
-            self.retriever = self.vstore.as_retriever(search_kwargs={"k":top_k}) 
+            mmr_retriever = self.vstore.as_retriever(
+                                                search_type="mmr",
+                                                search_kwargs={"k":top_k,
+                                                                "fetch_k": top_k+5,
+                                                                "lambda_mult": 0.5,
+                                                                "score_threshold":0.4
+                                                                })
+            compressor=LLMChainFilter.from_llm(llm=self.model_loader.load_llm())
+
+            self.retriever = ContextualCompressionRetriever(
+                                                                base_retriever=mmr_retriever,
+                                                                base_compressor=compressor
+                                                            )
         return self.retriever               
 
 
